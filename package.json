@@ -1,0 +1,37 @@
+{
+  "name": "open-id",
+  "version": "1.0.0",
+  "description": "OPen id for bso sevices",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "serve": "node dist/index.js",
+    "prod": "npm run build && npm run serve",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "ts-node prisma/seed.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BSO-Space/OpenID.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BSO-Space/OpenID/issues"
+  },
+  "homepage": "https://github.com/BSO-Space/OpenID#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.8.7",
+    "prisma": "^5.21.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.21.1",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4"
+  }
+}
