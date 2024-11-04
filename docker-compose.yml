@@ -6,7 +6,7 @@ services:
       context: .
       target: production
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "${APP_PORT}:3654"
     env_file:
       - .env
     depends_on:
@@ -32,7 +32,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "${PGADMIN_PORT}:${PGADMIN_PORT}"
+      - "${PGADMIN_PORT}:3008"
     depends_on:
       - db
 
