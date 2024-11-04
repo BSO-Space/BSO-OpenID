@@ -6,7 +6,7 @@ services:
       context: .
       target: production
     ports:
-      - "3005:3000"
+      - "${APP_PORT}:${APP_PORT}"
     env_file:
       - .env
     depends_on:
