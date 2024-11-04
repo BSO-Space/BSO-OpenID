@@ -31,8 +31,5 @@ COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/*.pem /app/
 
-# Expose the app port
-EXPOSE 3000
-
 # Run the application
 CMD ["node", "dist/src/server.js"]
