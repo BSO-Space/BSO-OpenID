@@ -13,9 +13,9 @@ class AuthService {
     // Create a new Prisma client
     this.prisma = new PrismaClient();
 
-    // Read RSA keys from file
-    this.privateKey = readFileSync(path.join(__dirname, "../../private.pem"));
-    this.publicKey = readFileSync(path.join(__dirname, "../../public.pem"));
+    // Use process.cwd() to ensure the root directory is used
+    this.privateKey = readFileSync(path.join(process.cwd(), "private.pem"));
+    this.publicKey = readFileSync(path.join(process.cwd(), "public.pem"));
   }
 
   /**
