@@ -2,14 +2,16 @@ version: "3.8"
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: production
     ports:
-      - "${APP_PORT}:${APP_PORT}"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - "3005:3000"
+    env_file:
+      - .env
     depends_on:
       - db
+    command: ["npm", "run", "serve"]
 
   db:
     image: postgres:latest
