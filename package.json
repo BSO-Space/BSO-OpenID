@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "serve": "node dist/server.js",
+    "serve": "node dist/src/server.js",
     "start": "nodemon src/verifyServer.ts",
     "prod": "npm run build && npm run serve",
     "generate:key": "node src/utils/generateKeys.mjs",
