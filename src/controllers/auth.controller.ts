@@ -155,7 +155,6 @@ export class AuthController {
     try {
       // Check if user is authenticated and service information is provided
       const service = req.query.service as string;
-      const validServices = ["service1", "service2", "blog"];
 
       // Check if user is authenticated and service information is provided
       if (!req.isAuthenticated() || !service) {
@@ -163,15 +162,6 @@ export class AuthController {
           success: false,
           message: "Unauthorized",
           error: "User not authenticated or service information missing",
-        });
-      }
-
-      // Check if service is valids
-      if (!validServices.includes(service)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid service",
-          error: `Service '${service}' is not recognized.`,
         });
       }
 
