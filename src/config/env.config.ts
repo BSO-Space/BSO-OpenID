@@ -15,6 +15,9 @@ interface EnvConfig {
   DISCORD_CALLBACK_URL: string;
   JWT_SECRET: string;
   SESSION_SECRET: string;
+  GITHUB_CLIENT_ID: string;
+  GITHUB_CLIENT_SECRET: string;
+  GITHUB_CALLBACK_URL: string;
 }
 
 const requiredConfig: (keyof EnvConfig)[] = [
@@ -28,6 +31,9 @@ const requiredConfig: (keyof EnvConfig)[] = [
   "DISCORD_CLIENT_ID",
   "DISCORD_CLIENT_SECRET",
   "DISCORD_CALLBACK_URL",
+  "GITHUB_CLIENT_ID",
+  "GITHUB_CLIENT_SECRET",
+  "GITHUB_CALLBACK_URL",
   "JWT_SECRET",
   "SESSION_SECRET",
 ];
@@ -45,6 +51,9 @@ export const envConfig: EnvConfig = {
   DISCORD_CALLBACK_URL: process.env.DISCORD_CALLBACK_URL || "",
   JWT_SECRET: process.env.JWT_SECRET || "",
   SESSION_SECRET: process.env.SESSION_SECRET || "session_secret_key",
+  GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || "",
+  GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || "",
+  GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || "",
 };
 
 requiredConfig.forEach((key) => {
