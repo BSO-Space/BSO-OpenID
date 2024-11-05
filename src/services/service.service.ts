@@ -11,7 +11,7 @@ import { PrismaClient, Prisma, Service } from "@prisma/client";
  * @method findByNames retrieve a service by name
  * @method createUserService create a new user service
  */
-class ServicesService {
+export class ServicesService {
   private prisma: PrismaClient;
 
   constructor() {
@@ -142,5 +142,3 @@ class ServicesService {
     }
   }
 }
-
-export default ServicesService;
