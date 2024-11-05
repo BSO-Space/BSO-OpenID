@@ -6,3 +6,4 @@ public.pem
 dist
 .DS_Store
 logs
+*pem
