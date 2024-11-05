@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import AuthService from "../services/auth.service";
-import ServicesService from "../services/services.service";
 import UserService from "../services/user.service";
+import { ServicesService } from "../services/service.service";
 
 declare module "express-session" {
   interface Session {
@@ -13,14 +13,7 @@ declare module "express-session" {
 /**
  * Controller class for authentication routes
  * @class AuthController
- * @property {AuthService} authService Instance of AuthService
- * @property {ServicesService} servicesService Instance of ServicesService
- * @property {UserService} userService Instance of UserService
- * @method discordAuth Initiates the Discord authentication process
- * @method discordCallback Callback function for Discord authentication
- * @method authSuccess Successful authentication response
  */
-
 export class AuthController {
   private authService: AuthService;
   private servicesService: ServicesService;
@@ -35,25 +28,23 @@ export class AuthController {
     this.servicesService = servicesService;
     this.userService = userService;
 
-    // Bind methods to maintain 'this' context
     this.discordAuth = this.discordAuth.bind(this);
     this.discordCallback = this.discordCallback.bind(this);
+    this.githubAuth = this.githubAuth.bind(this);
+    this.githubCallback = this.githubCallback.bind(this);
     this.authSuccess = this.authSuccess.bind(this);
   }
 
   /**
    * Initiates the Discord authentication process
-   * @param req Request object
-   * @param res Response object
-   * @param next Next function
-   * @returns Redirects to Discord authentication
    */
-
-  public discordAuth(req: Request, res: Response, next: NextFunction): any {
-    // Check if service information is provided
+  public async discordAuth(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
     const { service } = req.query;
 
-    // Check if service information is provided
     if (!service) {
       return res.status(400).json({
         success: false,
@@ -62,9 +53,7 @@ export class AuthController {
       });
     }
 
-    // Save service information to session and authenticate
     req.session.service = service as string;
-
     req.session.save((err) => {
       if (err) {
         console.error("Failed to save session:", err);
@@ -79,34 +68,112 @@ export class AuthController {
 
   /**
    * Callback function for Discord authentication
-   * @param req Request object
-   * @param res Response object
-   * @param next Next function
-   * @returns Redirects to success route
    */
-
   public async discordCallback(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<any> {
     try {
-      // Check if user is authenticated and service information is provided
-      const serviceName = req.query.state as string;
+      const service = req.query.state as string;
 
-      // Check if user is authenticated and service information is provideds
-      if (!serviceName) {
-        return res
-          .status(400)
-          .json({ error: "Service information missing from session" });
+      if (!service) {
+        return res.status(400).json({
+          success: false,
+          message: "Service information missing",
+          error: "Service information is required to authenticate",
+        });
       }
 
-      // Check if service exists and is enabled
+      const existingServices = await this.servicesService.findByNames(service);
+      if (!existingServices || !existingServices.public) {
+        return res.status(403).json({
+          success: false,
+          message: "Service not found or disabled",
+          error: `Service '${service}' is not available.`,
+        });
+      }
+
+      const userId = (req.user as { id: string }).id;
+      const userHasService = await this.userService.userHasService(
+        userId,
+        service
+      );
+
+      if (!userHasService && existingServices.public) {
+        await this.servicesService.createUserService(
+          userId,
+          existingServices.id
+        );
+      }
+
+      const user = req.user as any;
+      await this.authService.logAudit(
+        user.id,
+        "LOGIN",
+        req.ip || "",
+        req.get("User-Agent") || ""
+      );
+
+      res.redirect(`/auth/success?service=${service}`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Initiates the GitHub authentication process
+   */
+  public async githubAuth(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const serviceName = req.query.service as string;
+
+    if (!serviceName) {
+      return res.status(400).json({
+        success: false,
+        message: "Service information missing",
+        error: "Service information is required to authenticate",
+      });
+    }
+
+    req.session.service = serviceName;
+    req.session.save((err) => {
+      if (err) {
+        console.error("Failed to save session:", err);
+        return res.status(500).json({ error: "Failed to save session" });
+      }
+
+      passport.authenticate("github", {
+        state: serviceName,
+      })(req, res, next);
+    });
+  }
+
+  /**
+   * Callback function for GitHub authentication
+   */
+  public async githubCallback(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    try {
+      const serviceName = req.query.state as string;
+
+      if (!serviceName) {
+        return res.status(400).json({
+          success: false,
+          message: "Service information missing",
+          error: "Service information is required to authenticate",
+        });
+      }
+
       const existingServices = await this.servicesService.findByNames(
         serviceName
       );
-
-      // Check if service exists and is enabled
       if (!existingServices || !existingServices.public) {
         return res.status(403).json({
           success: false,
@@ -115,16 +182,12 @@ export class AuthController {
         });
       }
 
-      // Check if user has service and create if public
       const userId = (req.user as { id: string }).id;
-
-      // Check if user has service and create if public
       const userHasService = await this.userService.userHasService(
         userId,
         serviceName
       );
 
-      // Check if user has service and create if public
       if (!userHasService && existingServices.public) {
         await this.servicesService.createUserService(
           userId,
@@ -132,31 +195,27 @@ export class AuthController {
         );
       }
 
-      // Log audit event
       const user = req.user as any;
-      const ipAddress = req.ip || "";
-      const userAgent = req.get("User-Agent") || "";
-      await this.authService.logAudit(user.id, "LOGIN", ipAddress, userAgent);
+      await this.authService.logAudit(
+        user.id,
+        "LOGIN",
+        req.ip || "",
+        req.get("User-Agent") || ""
+      );
 
       res.redirect(`/auth/success?service=${serviceName}`);
     } catch (error) {
-      next(error as Error);
+      next(error);
     }
   }
 
   /**
    * Successful authentication response
-   * @param req Request object
-   * @param res Response object
-   * @returns JSON response with user and token information
    */
-
   public async authSuccess(req: Request, res: Response): Promise<any> {
     try {
-      // Check if user is authenticated and service information is provided
       const service = req.query.service as string;
 
-      // Check if user is authenticated and service information is provided
       if (!req.isAuthenticated() || !service) {
         return res.status(401).json({
           success: false,
@@ -165,22 +224,17 @@ export class AuthController {
         });
       }
 
-      // Generate tokens and log audit
       const user = req.user as any;
       const accessToken = this.authService.generateAccessToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
 
-      // Log audit event
-      const ipAddress = req.ip || "";
-      const userAgent = req.get("User-Agent") || "";
       await this.authService.logAudit(
         user.id,
         "ACCESS_SERVICE",
-        ipAddress,
-        userAgent
+        req.ip || "",
+        req.get("User-Agent") || ""
       );
 
-      // Send response with user and token information
       res.json({
         message: `Login successful for service ${service}`,
         user: user,
@@ -189,7 +243,7 @@ export class AuthController {
         refreshToken,
       });
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      res.status(500).json({ error: error });
     }
   }
 }

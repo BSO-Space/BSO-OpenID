@@ -2,8 +2,8 @@ import { Router } from "express";
 import passport from "passport";
 import { AuthController } from "../controllers/auth.controller";
 import AuthService from "../services/auth.service";
-import ServicesService from "../services/services.service";
 import UserService from "../services/user.service";
+import { ServicesService } from "../services/service.service";
 const router = Router();
 const authService = new AuthService();
 const servicesService = new ServicesService();
@@ -24,6 +24,16 @@ router.get(
   "/discord/callback",
   passport.authenticate("discord", { failureRedirect: "/auth/failure" }),
   authController.discordCallback
+);
+
+// Define the routes for the authentication process
+router.get("/github", authController.githubAuth);
+
+// Define the callback route for GitHub authentication
+router.get(
+  "/github/callback",
+  passport.authenticate("github", { failureRedirect: "/auth/failure" }),
+  authController.githubCallback
 );
 
 // Define the failure route for authentication
