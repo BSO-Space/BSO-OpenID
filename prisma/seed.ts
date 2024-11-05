@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1. สร้าง Permissions
+  // 1. Create Permissions
   await prisma.permission.createMany({
     data: [
       { name: "read:user", description: "Permission to read user information" },
@@ -12,10 +12,12 @@ async function main() {
       { name: "delete:user", description: "Permission to delete user" },
       { name: "manage:role", description: "Permission to manage roles" },
     ],
-    skipDuplicates: true, // ข้ามถ้ามี Permission นี้อยู่แล้ว
+
+    // Skip duplicates if they already exist
+    skipDuplicates: true,
   });
 
-  // ดึง ID ของ Permissions ที่ต้องการเชื่อมโยงกับ Admin role
+  // 2. Create Roles and associate with Permissions
   const readUserPermission = await prisma.permission.findUnique({
     where: { name: "read:user" },
   });
@@ -29,7 +31,7 @@ async function main() {
     where: { name: "manage:role" },
   });
 
-  // 2. สร้าง Roles และเชื่อมโยงกับ Permissions
+  // Create Admin role with full access
   const adminRole = await prisma.role.upsert({
     where: { name: "Admin" },
     update: {},
@@ -63,6 +65,7 @@ async function main() {
     },
   });
 
+  // Create User role with limited access
   const userRole = await prisma.role.upsert({
     where: { name: "User" },
     update: {},
@@ -81,18 +84,23 @@ async function main() {
     },
   });
 
-  // 3. สร้าง Services
-  const authService = await prisma.service.upsert({
-    where: { name: "Authentication Service" },
-    update: {},
-    create: {
-      name: "Authentication Service",
-      description: "Service for user authentication and authorization",
-      public: false,
+  // Create service
+  const bsoBlog = await prisma.service.create({
+    data: {
+      name: "blog",
+      description: "Service for BSO Blog",
+      public: true,
     },
   });
 
-  // 4. สร้าง Users และเชื่อมโยง Roles
+  const portHive = await prisma.service.create({
+    data: {
+      name: "portHive",
+      description: "Service for Port Hive",
+      public: false,
+    },
+  });
+  // Create Users and associate with Roles and Services
   const user1 = await prisma.user.upsert({
     where: { email: "admin@example.com" },
     update: {},
@@ -103,12 +111,10 @@ async function main() {
       email: "admin@example.com",
       image: "https://example.com/admin.png",
       userRoles: {
-        create: [
-          { role: { connect: { name: "Admin" } } }, // เชื่อมโยงกับ Admin role
-        ],
+        create: [{ role: { connect: { name: "Admin" } } }],
       },
       userServices: {
-        create: [{ service: { connect: { name: "Authentication Service" } } }],
+        create: [{ service: { connect: { name: "blog" } } }],
       },
     },
   });
@@ -126,7 +132,7 @@ async function main() {
         create: [{ role: { connect: { name: "User" } } }],
       },
       userServices: {
-        create: [{ service: { connect: { name: "Authentication Service" } } }],
+        create: [{ service: { connect: { name: "blog" } } }],
       },
     },
   });
