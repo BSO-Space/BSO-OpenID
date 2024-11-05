@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM node:16 AS build
+FROM node:22 AS build
 
 # Set the working directory
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 2: Production image
-FROM node:16 AS production
+FROM node:22 AS production
 
 # Set the working directory
 WORKDIR /app
