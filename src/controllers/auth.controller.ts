@@ -5,6 +5,7 @@ import UserService from "../services/user.service";
 import { ServicesService } from "../services/service.service";
 import { envConfig } from "../config/env.config";
 import { JwtPayload } from "jsonwebtoken";
+import { User } from "@prisma/client";
 
 declare module "express-session" {
   interface Session {
@@ -330,7 +331,7 @@ export class AuthController {
 
       // Verify the refresh token
       const jwtPayload: JwtPayload | null =
-        this.authService.verifyRefreshToken(refreshToken);
+        this.authService.verifyAccessToken(refreshToken);
 
       // Check if the refresh token is valid
       if (!jwtPayload) {
@@ -403,6 +404,34 @@ export class AuthController {
       });
     } catch (error) {
       return res.status(500).json({ error: error });
+    }
+  }
+
+  public async me(req: Request, res: Response): Promise<any> {
+    try {
+      const user = req.user as User;
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "User not authenticated",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Get my user info successful",
+        data: {
+          user,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: error,
+      });
     }
   }
 }

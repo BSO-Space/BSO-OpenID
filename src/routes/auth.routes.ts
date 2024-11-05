@@ -4,10 +4,12 @@ import { AuthController } from "../controllers/auth.controller";
 import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import { ServicesService } from "../services/service.service";
+import AuthMiddleware from "../middlewares/auth.middleware";
 const router = Router();
 const authService = new AuthService();
 const servicesService = new ServicesService();
 const userService = new UserService();
+const authMiddleware = new AuthMiddleware(authService, userService);
 
 // Create an instance of the AuthController
 const authController = new AuthController(
@@ -39,6 +41,9 @@ router.get(
 // Define the failure route for authentication
 router.get("/success", authController.authSuccess);
 
+// Define the failure route for authentication
 router.get("/refresh", authController.refresh);
+
+router.get("/me", authMiddleware.authenticate, authController.me);
 
 export default router;
