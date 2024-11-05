@@ -39,4 +39,6 @@ router.get(
 // Define the failure route for authentication
 router.get("/success", authController.authSuccess);
 
+router.get("/refresh", authController.refresh);
+
 export default router;

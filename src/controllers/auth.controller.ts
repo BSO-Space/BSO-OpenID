@@ -3,6 +3,8 @@ import passport from "passport";
 import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import { ServicesService } from "../services/service.service";
+import { envConfig } from "../config/env.config";
+import { JwtPayload } from "jsonwebtoken";
 
 declare module "express-session" {
   interface Session {
@@ -33,6 +35,8 @@ export class AuthController {
     this.githubAuth = this.githubAuth.bind(this);
     this.githubCallback = this.githubCallback.bind(this);
     this.authSuccess = this.authSuccess.bind(this);
+    this.logout = this.logout.bind(this);
+    this.refresh = this.refresh.bind(this);
   }
 
   /**
@@ -225,8 +229,35 @@ export class AuthController {
       }
 
       const user = req.user as any;
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "User not authenticated",
+        });
+      }
       const accessToken = this.authService.generateAccessToken(user);
       const refreshToken = this.authService.generateRefreshToken(user);
+
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        domain:
+          process.env.NODE_ENV === "production"
+            ? `${envConfig.DOMAIN}`
+            : "localhost",
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        domain:
+          process.env.NODE_ENV === "production"
+            ? `${envConfig.DOMAIN}`
+            : "localhost",
+      });
 
       await this.authService.logAudit(
         user.id,
@@ -235,7 +266,7 @@ export class AuthController {
         req.get("User-Agent") || ""
       );
 
-      res.json({
+      return res.json({
         message: `Login successful for service ${service}`,
         user: user,
         service: service,
@@ -244,6 +275,110 @@ export class AuthController {
       });
     } catch (error) {
       res.status(500).json({ error: error });
+    }
+  }
+
+  public async logout(req: Request, res: Response): Promise<any> {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Failed to destroy session:", err);
+        return res.status(500).json({ error: "Failed to destroy session" });
+      }
+
+      return res.json({
+        success: true,
+        message: "Logout successful",
+        error: null,
+      });
+    });
+  }
+
+  public async refresh(req: Request, res: Response): Promise<any> {
+    try {
+      // Get the refresh token from the request
+      const refreshToken =
+        req.cookies.refreshToken || req.headers["x-refresh-token"];
+
+      // Check if the refresh token is provided
+      if (!refreshToken) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "Refresh token not provided",
+        });
+      }
+
+      // Verify the refresh token
+      const jwtPayload: JwtPayload | null =
+        this.authService.verifyRefreshToken(refreshToken);
+
+      // Check if the refresh token is valid
+      if (!jwtPayload) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "Invalid refresh token",
+        });
+      }
+
+      // Check if the user ID is present in the payload
+      if (!jwtPayload || !jwtPayload.sub) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "Invalid refresh token",
+        });
+      }
+
+      //  Get the user from the database
+      const user = await this.userService.getUserById(jwtPayload.sub!);
+
+      // Check if the user exists
+      if (!jwtPayload || !user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+          error: "Invalid refresh token",
+        });
+      }
+
+      // Generate a new access token
+      const accessToken = this.authService.generateAccessToken(user);
+
+      // Generate a new refresh token
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        domain:
+          process.env.NODE_ENV === "production"
+            ? `${envConfig.DOMAIN}`
+            : "localhost",
+      });
+
+      // Send the new access token and refresh token in the response
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        domain:
+          process.env.NODE_ENV === "production"
+            ? `${envConfig.DOMAIN}`
+            : "localhost",
+      });
+
+      // Log the audit event
+      return res.json({
+        success: true,
+        message: "Token refreshed",
+        accessToken,
+        refreshToken,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error });
     }
   }
 }
