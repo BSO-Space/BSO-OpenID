@@ -1,8 +1,9 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { AuditLog, PrismaClient, User } from "@prisma/client";
+import { Account, AuditLog, PrismaClient, User } from "@prisma/client";
 import { readFileSync } from "fs";
 import path from "path";
 import { envConfig } from "../config/env.config";
+import logger from "../utils/logger.util";
 
 class AuthService {
   private prisma: PrismaClient;
@@ -75,55 +76,6 @@ class AuthService {
   }
 
   /**
-   *  find or create user from profile
-   * @param profile- user profile
-   * @param provider- provider name
-   * @returns
-   */
-  public async findOrCreateUserFromProfile(
-    profile: any,
-    provider: string
-  ): Promise<User> {
-    const { id, username, email, avatar } = profile;
-
-    console.log("profile", profile);
-    let user = await this.prisma.user.findFirst({
-      where: {
-        accounts: {
-          some: {
-            provider: provider,
-            providerAccountId: id,
-          },
-        },
-      },
-    });
-    const userID = profile.id;
-    const avatarHash = profile.avatar;
-
-    const avatarUrl = avatarHash
-      ? `https://cdn.discordapp.com/avatars/${userID}/${avatarHash}.png`
-      : `https://cdn.discordapp.com/embed/avatars/${parseInt(userID) % 5}.png`;
-
-    if (!user) {
-      // Example of creating a user in your database
-      user = await this.prisma.user.create({
-        data: {
-          username: profile.username,
-          email: profile.email || "",
-          image: avatarUrl,
-          accounts: {
-            create: {
-              provider: "discord",
-              providerAccountId: userID,
-            },
-          },
-        },
-      });
-    }
-    return user;
-  }
-
-  /**
    * Log audit events for user actions.
    * @param userId - ID of the user who performed the action
    * @param action - The action type (e.g., "LOGIN", "ACCESS_SERVICE")
@@ -131,6 +83,43 @@ class AuthService {
    * @param ipAddress - The IP address of the request
    * @param userAgent - The user agent of the request
    */
+
+  /**
+   * Fetch the primary email of a GitHub user using the access token.
+   * @param accessToken - The GitHub access token.
+   * @returns The primary email of the user.
+   * @throws Error if the email cannot be fetched.
+   */
+  public async fetchGitHubEmails(accessToken: string): Promise<string> {
+    try {
+      const response = await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `token ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        logger.error(
+          "Failed to fetch emails from GitHub:",
+          response.statusText
+        );
+        throw new Error("Unable to fetch GitHub emails");
+      }
+
+      const emails = await response.json();
+
+      // Find primary email or throw an error if none found
+      const primaryEmail = emails.find((email: any) => email.primary)?.email;
+      if (!primaryEmail) {
+        throw new Error("Primary email not found for GitHub user");
+      }
+
+      return primaryEmail;
+    } catch (error) {
+      logger.error("Error fetching GitHub email:", error);
+      throw new Error("Failed to retrieve primary email from GitHub");
+    }
+  }
 
   public async logAudit(
     userId: string,
