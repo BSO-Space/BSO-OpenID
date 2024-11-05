@@ -4,3 +4,5 @@ node_modules
 private.pem
 public.pem
 dist
+.DS_Store
+logs
