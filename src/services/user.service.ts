@@ -23,6 +23,38 @@ class UserService {
   }
 
   /**
+   * me retrieve the user and their services
+   * @param userId the user ID
+   * @returns the user and their services
+   */
+  async me(userId: string) {
+    try {
+      return await this.prisma.user.findMany({
+        where: {
+          id: userId,
+        },
+        include: {
+          userServices: {
+            where: {
+              deletedAt: null,
+            },
+          },
+          accounts: {
+            where: {
+              deletedAt: null,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error retrieving user services:", error);
+      throw new Error(
+        "Failed to retrieve user services. Please try again later."
+      );
+    }
+  }
+
+  /**
    * findOrCreateUserFromProfile find or create a user from a profile
    * @param profile  the user profile
    * @param provider the provider name
