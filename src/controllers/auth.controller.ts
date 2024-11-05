@@ -319,9 +319,6 @@ export class AuthController {
         });
       }
 
-      const existingServices = await this.servicesService.findByNames(service);
-
-      console.log("existingServices", existingServices);
       // Check if the refresh token is provided
       if (!refreshToken) {
         return res.status(401).json({
