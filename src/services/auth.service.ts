@@ -75,6 +75,19 @@ class AuthService {
     }
   }
 
+  public verifyRefreshToken(token: string): JwtPayload | null {
+    try {
+      const decoded = jwt.verify(token, this.publicKey, {
+        algorithms: ["RS256"],
+      }) as JwtPayload;
+
+      return decoded;
+    } catch (error) {
+      console.error("Failed to verify refresh token:", error);
+      return null;
+    }
+  }
+
   /**
    * Log audit events for user actions.
    * @param userId - ID of the user who performed the action
