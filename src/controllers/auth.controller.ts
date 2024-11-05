@@ -236,8 +236,8 @@ export class AuthController {
           error: "User not authenticated",
         });
       }
-      const accessToken = this.authService.generateAccessToken(user);
-      const refreshToken = this.authService.generateRefreshToken(user);
+      const accessToken = this.authService.generateAccessToken(user, service);
+      const refreshToken = this.authService.generateRefreshToken(user, service);
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
@@ -301,6 +301,27 @@ export class AuthController {
       const refreshToken =
         req.cookies.refreshToken || req.headers["x-refresh-token"];
 
+      const service = req.query.service as string;
+
+      if (!service) {
+        return res.status(400).json({
+          success: false,
+          message: "Service information missing",
+          error: "Service information is required to authenticate",
+        });
+      }
+
+      if (!service) {
+        return res.status(400).json({
+          success: false,
+          message: "Service information missing",
+          error: "Service information is required to authenticate",
+        });
+      }
+
+      const existingServices = await this.servicesService.findByNames(service);
+
+      console.log("existingServices", existingServices);
       // Check if the refresh token is provided
       if (!refreshToken) {
         return res.status(401).json({
@@ -323,12 +344,18 @@ export class AuthController {
         });
       }
 
+      // Check if the user has the service
+      const userHasService = await this.userService.userHasService(
+        jwtPayload.sub!,
+        service
+      );
+
       // Check if the user ID is present in the payload
-      if (!jwtPayload || !jwtPayload.sub) {
+      if (!jwtPayload || !jwtPayload.sub || !userHasService) {
         return res.status(401).json({
           success: false,
           message: "Unauthorized",
-          error: "Invalid refresh token",
+          error: "Invalid refresh token or service",
         });
       }
 
@@ -345,7 +372,7 @@ export class AuthController {
       }
 
       // Generate a new access token
-      const accessToken = this.authService.generateAccessToken(user);
+      const accessToken = this.authService.generateAccessToken(user, service);
 
       // Generate a new refresh token
       res.cookie("accessToken", accessToken, {

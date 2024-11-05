@@ -37,13 +37,14 @@ class AuthService {
    * @returns The generated access token
    * @throws Error if the token cannot be generated
    */
-  public generateAccessToken(user: User): string {
+  public generateAccessToken(user: User, service: string): string {
     return jwt.sign(
       {
         sub: user.id,
         name: user.username,
         iss: envConfig.APP_URL,
         iat: Math.floor(Date.now() / 1000),
+        service: service,
       },
       this.privateAccessKey,
       { algorithm: "RS256", expiresIn: "1d" }
@@ -56,13 +57,14 @@ class AuthService {
    * @returns The generated refresh token
    * @throws Error if the token cannot be generated
    */
-  public generateRefreshToken(user: User): string {
+  public generateRefreshToken(user: User, service: string): string {
     return jwt.sign(
       {
         sub: user.id,
         name: user.username,
         iss: envConfig.APP_URL,
         iat: Math.floor(Date.now() / 1000),
+        service: service,
       },
       this.privateRefreshKey,
       { algorithm: "RS256", expiresIn: "15d" }
