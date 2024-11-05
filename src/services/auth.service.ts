@@ -46,7 +46,7 @@ class AuthService {
         iat: Math.floor(Date.now() / 1000),
       },
       this.privateAccessKey,
-      { algorithm: "RS256", expiresIn: "15m" }
+      { algorithm: "RS256", expiresIn: "1d" }
     );
   }
 
@@ -65,7 +65,7 @@ class AuthService {
         iat: Math.floor(Date.now() / 1000),
       },
       this.privateRefreshKey,
-      { algorithm: "RS256", expiresIn: "7d" }
+      { algorithm: "RS256", expiresIn: "15d" }
     );
   }
 
