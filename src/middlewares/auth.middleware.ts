@@ -45,8 +45,6 @@ class AuthMiddleware {
       const jwtPayload: JwtPayload | null =
         this.authService.verifyAccessToken(token);
 
-      console.log("JWT Payload:", jwtPayload);
-
       if (!jwtPayload) {
         return res.status(401).json({
           success: false,
