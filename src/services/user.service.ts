@@ -2,7 +2,7 @@
  * USerService this class is used to interact with the database
  * and perform CRUD operations on the User model.
  */
-import { PrismaClient, User } from "@prisma/client";
+import { Account, PrismaClient, User } from "@prisma/client";
 
 /**
  * UserService this class is used to interact with the database
@@ -23,6 +23,75 @@ class UserService {
   }
 
   /**
+   * findOrCreateUserFromProfile find or create a user from a profile
+   * @param profile  the user profile
+   * @param provider the provider name
+   * @returns the user
+   */
+
+  public async findOrCreateUserFromProfile(
+    profile: { id: string; username: string; email: string; avatar: string },
+    provider: string
+  ): Promise<User> {
+    // Extract the relevant fields from the profile
+    const { id, username, email, avatar } = profile;
+
+    // Use the email to generate a username
+    const newUserName = email.split("@")[0];
+
+    // Check if the user already exists
+    let user = await this.prisma.user.findFirst({
+      where: { email },
+      include: { accounts: true },
+    });
+
+    // If the user exists, check if the account already exists
+    if (user) {
+      // Check if the account already exists
+      const existingAccount = user.accounts?.find(
+        (account) => account.provider === provider
+      );
+
+      // If the account does not exist, create it
+      if (!existingAccount) {
+        await this.prisma.account.create({
+          data: {
+            provider,
+            providerAccountId: id,
+            userId: user.id,
+            providerUserName: username,
+            providerImage: avatar,
+          },
+        });
+      }
+
+      return user;
+    }
+
+    // If the user does not exist, create a new user
+    user = await this.prisma.user.create({
+      data: {
+        username: newUserName,
+        email,
+        image: avatar,
+        accounts: {
+          create: {
+            provider,
+            providerAccountId: id,
+            providerImage: avatar,
+            providerUserName: username,
+          },
+        },
+      },
+      include: {
+        accounts: true,
+      },
+    });
+
+    return user;
+  }
+
+  /**
    * createUser create a new user
    * @param data the user data
    * @returns the newly created user
@@ -39,6 +108,74 @@ class UserService {
         throw new Error(`Failed to create user: ${error.message}`);
       } else {
         throw new Error("Failed to create user: Unknown error");
+      }
+    }
+  }
+
+  /**
+   *  find or create user from profile
+   * @param profile- user profile
+   * @param provider- provider name
+   * @returns the user
+   */
+
+  async getByProviderNameAndEmail(
+    providerName: string,
+    email: string
+  ): Promise<User | null> {
+    try {
+      return await this.prisma.user.findFirst({
+        include: {
+          accounts: {
+            where: {
+              provider: providerName,
+              user: {
+                email,
+              },
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to retrieve user by provider account ID: ${error.message}`
+        );
+      } else {
+        throw new Error(
+          "Failed to retrieve user by provider account ID: Unknown error"
+        );
+      }
+    }
+  }
+
+  /**
+   * getUserAndAccountByEmail retrieve a user and their accounts by email
+   * @param email the user email
+   * @returns the user and their accounts
+   */
+
+  async getUserAndAccountByEmail(email: string): Promise<{
+    user: User | null;
+    accounts: Account[] | null;
+  }> {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: { email },
+        include: {
+          accounts: {
+            where: {
+              deletedAt: null,
+            },
+          },
+        },
+      });
+      return { user, accounts: user ? user.accounts : null };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to retrieve user by email: ${error.message}`);
+      } else {
+        throw new Error("Failed to retrieve user by email: Unknown error");
       }
     }
   }
