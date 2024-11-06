@@ -16,7 +16,9 @@ const app = express();
 
 const corsOptions = {
   origin: `${
-    envConfig.NODE_ENV === "production" ? envConfig.FRONTEND_URL : "*"
+    envConfig.NODE_ENV === "production"
+      ? envConfig.FRONTEND_URL
+      : "http://localhost:3000"
   } `,
   credentials: true,
 };
