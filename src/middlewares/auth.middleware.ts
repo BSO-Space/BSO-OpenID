@@ -55,8 +55,6 @@ class AuthMiddleware {
 
       const user = await this.userService.getUserById(jwtPayload.sub!);
 
-      console.log("User:", user);
-
       if (!user) {
         return res.status(401).json({
           success: false,
