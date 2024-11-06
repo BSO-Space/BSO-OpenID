@@ -35,6 +35,9 @@ export class AuthController {
     this.discordCallback = this.discordCallback.bind(this);
     this.githubAuth = this.githubAuth.bind(this);
     this.githubCallback = this.githubCallback.bind(this);
+    this.googleAuth = this.googleAuth.bind(this);
+    this.googleCallback = this.googleCallback.bind(this);
+    this.me = this.me.bind(this);
     this.authSuccess = this.authSuccess.bind(this);
     this.logout = this.logout.bind(this);
     this.refresh = this.refresh.bind(this);
@@ -234,6 +237,91 @@ export class AuthController {
     } catch (error) {
       next(error);
     }
+  }
+
+  public async googleAuth(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const { service, redirect } = req.query;
+
+    if (!service) {
+      return res.status(400).json({
+        success: false,
+        message: "Service information missing",
+        error: "Service information is required to authenticate",
+      });
+    }
+
+    if (!redirect) {
+      return res.status(400).json({
+        success: false,
+        message: "Redirect URL missing",
+        error: "Redirect URL is required to authenticate",
+      });
+    }
+
+    req.session.service = service as string;
+
+    req.session.save((err) => {
+      if (err) {
+        console.error("Failed to save session:", err);
+        return res.status(500).json({ error: "Failed to save session" });
+      }
+
+      passport.authenticate("google", {
+        state: JSON.stringify({
+          service: service as string,
+          redirect: redirect as string,
+        }),
+      })(req, res, next);
+    });
+  }
+
+  public async googleCallback(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const { service, redirect } = JSON.parse(req.query.state as string);
+
+    if (!service) {
+      return res.status(400).json({
+        success: false,
+        message: "Service information missing",
+        error: "Service information is required to authenticate",
+      });
+    }
+
+    const existingServices = await this.servicesService.findByNames(service);
+    if (!existingServices || !existingServices.public) {
+      return res.status(403).json({
+        success: false,
+        message: "Service not found or disabled",
+        error: `Service '${service}' is not available.`,
+      });
+    }
+
+    const userId = (req.user as { id: string }).id;
+    const userHasService = await this.userService.userHasService(
+      userId,
+      service
+    );
+
+    if (!userHasService && existingServices.public) {
+      await this.servicesService.createUserService(userId, existingServices.id);
+    }
+
+    const user = req.user as any;
+    await this.authService.logAudit(
+      user.id,
+      "LOGIN",
+      req.ip || "",
+      req.get("User-Agent") || ""
+    );
+
+    res.redirect(`/auth/success?service=${service}&redirect=${redirect}`);
   }
 
   /**
@@ -439,9 +527,7 @@ export class AuthController {
       return res.json({
         success: true,
         message: "Get my user info successful",
-        data: {
-          user,
-        },
+        data: user,
       });
     } catch (error) {
       return res.status(500).json({

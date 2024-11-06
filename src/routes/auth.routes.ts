@@ -38,12 +38,26 @@ router.get(
   authController.githubCallback
 );
 
+// Define the routes for the authentication process
+router.get("/google", authController.googleAuth);
+
+// Define the callback route for Google authentication
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/auth/failure" }),
+  authController.googleCallback
+);
+
 // Define the failure route for authentication
 router.get("/success", authController.authSuccess);
 
 // Define the failure route for authentication
 router.get("/refresh", authController.refresh);
 
+// Define the failure route for authentication
 router.get("/me", authMiddleware.authenticate, authController.me);
+
+// Define the failure route for authentication
+router.delete("/logout", authController.logout);
 
 export default router;
