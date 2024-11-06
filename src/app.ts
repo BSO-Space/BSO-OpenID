@@ -11,6 +11,7 @@ import UserService from "./services/user.service";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import path from "path";
 
 const app = express();
 
@@ -27,6 +28,15 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Serve static files from the 'public' directory
+app.use(
+  express.static(path.join(__dirname, "..", "public"), {
+    setHeaders: (res: express.Response, path: string) => {
+      console.log("Serving:", path);
+    },
+  })
+);
 
 // request rate limiter
 const limiter = rateLimit({
