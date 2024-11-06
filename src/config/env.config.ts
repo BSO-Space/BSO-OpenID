@@ -23,6 +23,9 @@ interface EnvConfig {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   GITHUB_CALLBACK_URL: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CALLBACK_URL: string;
 }
 
 const requiredConfig: (keyof EnvConfig)[] = [
@@ -44,6 +47,9 @@ const requiredConfig: (keyof EnvConfig)[] = [
   "GITHUB_CLIENT_ID",
   "GITHUB_CLIENT_SECRET",
   "GITHUB_CALLBACK_URL",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "GOOGLE_CALLBACK_URL",
   "JWT_SECRET",
   "SESSION_SECRET",
 ];
@@ -69,6 +75,9 @@ export const envConfig: EnvConfig = {
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || "",
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || "",
   GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || "",
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
+  GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || "",
 };
 
 requiredConfig.forEach((key) => {
