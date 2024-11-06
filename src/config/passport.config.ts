@@ -1,6 +1,7 @@
 import passport from "passport";
 import { Strategy as DiscordStrategy } from "passport-discord";
 import GitHubStrategy from "passport-github";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { envConfig } from "./env.config";
 import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
@@ -12,6 +13,7 @@ class PassportConfig {
   ) {
     this.configureDiscordStrategy();
     this.configureGitHubStrategy();
+    this.configureGoogleStrategy();
     this.configureSerialization();
   }
 
@@ -94,6 +96,48 @@ class PassportConfig {
             const user = await this.userService.findOrCreateUserFromProfile(
               userProfile,
               "github"
+            );
+            done(null, user);
+          } catch (error) {
+            done(error, false);
+          }
+        }
+      )
+    );
+  }
+
+  private configureGoogleStrategy() {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: envConfig.GOOGLE_CLIENT_ID,
+          clientSecret: envConfig.GOOGLE_CLIENT_SECRET,
+          callbackURL: envConfig.GOOGLE_CALLBACK_URL,
+          passReqToCallback: true,
+          scope: ["profile", "email"],
+        },
+        async (
+          req,
+          accessToken: string,
+          refreshToken: string,
+          profile: any,
+          done: (error: any, user?: any) => void
+        ) => {
+          try {
+            const email = profile.emails[0].value;
+
+            const userProfile = {
+              id: profile.id,
+              username: profile.displayName,
+              avatar: profile.photos[0].value,
+              email,
+            };
+
+            console.log("Google Profile:", profile);
+
+            const user = await this.userService.findOrCreateUserFromProfile(
+              userProfile,
+              "google"
             );
             done(null, user);
           } catch (error) {
