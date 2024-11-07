@@ -95,6 +95,7 @@ model Service {
   name               String              @unique
   description        String?
   public             Boolean             @default(false)
+  image              String?
   apiKeys            ServiceApiKey[]
   servicePermissions ServicePermission[]
   userServices       UserService[]

@@ -82,6 +82,7 @@ CREATE TABLE "Service" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "public" BOOLEAN NOT NULL DEFAULT false,
+    "image" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
