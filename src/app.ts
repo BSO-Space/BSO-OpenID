@@ -74,4 +74,12 @@ app.use(passport.session());
 app.use(auditMiddleware.logAccess.bind(auditMiddleware));
 app.use("/auth", authRoutes);
 
+app.get("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "not found",
+    error: "You services not found!",
+  });
+});
+
 export default app;
