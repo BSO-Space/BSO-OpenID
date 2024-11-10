@@ -46,6 +46,7 @@
     "@types/express-session": "^1.18.0",
     "@types/passport-github": "^1.1.12",
     "@types/winston": "^2.4.4",
+    "@types/ws": "^8.5.13",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -62,6 +63,7 @@
     "passport-github": "^1.1.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
-    "winston": "^3.16.0"
+    "winston": "^3.16.0",
+    "ws": "^8.18.0"
   }
 }
