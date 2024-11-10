@@ -30,6 +30,7 @@ COPY --from=build /app/dist /app/dist
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/package.json /app/package.json
 COPY --from=build /app/*.pem /app/
+COPY --from=build /app/public /app/public
 
 # Run the application
 CMD ["node", "dist/src/server.js"]
