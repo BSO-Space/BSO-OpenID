@@ -5,17 +5,19 @@ import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import { ServicesService } from "../services/service.service";
 import AuthMiddleware from "../middlewares/auth.middleware";
+import { HookService } from "../services/hook.service";
 const router = Router();
 const authService = new AuthService();
 const servicesService = new ServicesService();
 const userService = new UserService();
 const authMiddleware = new AuthMiddleware(authService, userService);
-
+const hookService = new HookService(servicesService);
 // Create an instance of the AuthController
 const authController = new AuthController(
   authService,
   servicesService,
-  userService
+  userService,
+  hookService
 );
 
 // Define the routes for the authentication process
