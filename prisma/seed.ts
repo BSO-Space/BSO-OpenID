@@ -89,6 +89,7 @@ async function main() {
     data: {
       name: "blog",
       description: "Service for BSO Blog",
+      microServicesUrl: ["http://localhost:3005"],
       public: true,
     },
   });
@@ -97,9 +98,20 @@ async function main() {
     data: {
       name: "portHive",
       description: "Service for Port Hive",
+      microServicesUrl: ["http://localhost:3005"],
       public: false,
     },
   });
+
+  const chat = await prisma.service.create({
+    data: {
+      name: "chat",
+      description: "Service for chat",
+      microServicesUrl: ["http://localhost:3001"],
+      public: false,
+    },
+  });
+
   // Create Users and associate with Roles and Services
   const user1 = await prisma.user.upsert({
     where: { email: "admin@example.com" },

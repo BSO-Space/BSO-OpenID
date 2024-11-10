@@ -83,11 +83,28 @@ CREATE TABLE "Service" (
     "description" TEXT,
     "public" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT,
+    "hookSecret" TEXT NOT NULL,
+    "microServicesUrl" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "HookLog" (
+    "id" TEXT NOT NULL,
+    "serviceId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "statusCode" INTEGER NOT NULL,
+    "requestBody" JSONB NOT NULL,
+    "responseBody" JSONB,
+    "errorMessage" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "HookLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -204,6 +221,9 @@ ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HookLog" ADD CONSTRAINT "HookLog_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ServiceApiKey" ADD CONSTRAINT "ServiceApiKey_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

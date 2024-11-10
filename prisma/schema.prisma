@@ -96,6 +96,8 @@ model Service {
   description        String?
   public             Boolean             @default(false)
   image              String?
+  hookSecret         String              @default(cuid())
+  microServicesUrl   String[]            @default([])
   apiKeys            ServiceApiKey[]
   servicePermissions ServicePermission[]
   userServices       UserService[]
@@ -103,6 +105,20 @@ model Service {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
+  HookLog   HookLog[]
+}
+
+model HookLog {
+  id           String   @id @default(uuid())
+  serviceId    String
+  url          String
+  status       String
+  statusCode   Int
+  requestBody  Json
+  responseBody Json?
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  service      Service  @relation(fields: [serviceId], references: [id])
 }
 
 model ServiceApiKey {
