@@ -6,6 +6,7 @@ import { ServicesService } from "../services/service.service";
 import { envConfig } from "../config/env.config";
 import { JwtPayload } from "jsonwebtoken";
 import { User } from "@prisma/client";
+import { HookService } from "../services/hook.service";
 
 declare module "express-session" {
   interface Session {
@@ -21,15 +22,18 @@ export class AuthController {
   private authService: AuthService;
   private servicesService: ServicesService;
   private userService: UserService;
+  private hookService: HookService;
 
   constructor(
     authService: AuthService,
     servicesService: ServicesService,
-    userService: UserService
+    userService: UserService,
+    hookService: HookService
   ) {
     this.authService = authService;
     this.servicesService = servicesService;
     this.userService = userService;
+    this.hookService = hookService;
 
     this.discordAuth = this.discordAuth.bind(this);
     this.discordCallback = this.discordCallback.bind(this);
@@ -348,6 +352,19 @@ export class AuthController {
           error: "User not authenticated",
         });
       }
+
+      // send hook to microservices
+      const sendHooks = await this.hookService.sendLoginNotification(
+        user,
+        service,
+        req.ip || "",
+        req.get("User-Agent") || ""
+      );
+
+      if (!sendHooks) {
+        return res.redirect(redirect || "/");
+      }
+
       const accessToken = this.authService.generateAccessToken(user, service);
       const refreshToken = this.authService.generateRefreshToken(user, service);
 
