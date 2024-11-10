@@ -2,7 +2,7 @@ import { WebSocketServer } from "ws";
 import express from "express";
 import http from "http";
 import app from "./app";
-const PORT = process.env.PORT || 3005;
+import { envConfig } from "./config/env.config";
 const server = http.createServer(app);
 
 // Create a WebSocket server
@@ -32,6 +32,8 @@ app.post("/webhook", express.json(), (req, res) => {
 });
 
 // Start the server
-server.listen(PORT, () => {
-  console.log(`Production server running on http://localhost:${PORT}`);
+server.listen(envConfig.APP_PORT, () => {
+  console.log(
+    `Production server running on http://localhost:${envConfig.APP_PORT}`
+  );
 });
