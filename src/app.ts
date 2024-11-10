@@ -29,14 +29,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Serve static files from the 'public' directory
-app.use(
-  express.static(path.join(__dirname, "..", "public"), {
-    setHeaders: (res: express.Response, path: string) => {
-      console.log("Serving:", path);
-    },
-  })
-);
+// Serve the index.html directly for the /docs path
+app.get("/docs", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "..", "public", "../public/docs/index.html")
+  );
+});
 
 // request rate limiter
 const limiter = rateLimit({
