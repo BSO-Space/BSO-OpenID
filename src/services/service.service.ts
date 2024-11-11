@@ -41,6 +41,20 @@ export class ServicesService {
     }
   }
 
+  async findByToken(token: string): Promise<Service | null> {
+    try {
+      return await this.prisma.service.findFirst({
+        where: {
+          hookSecret: token,
+          deletedAt: null,
+        },
+      });
+    } catch (error) {
+      console.error("Error retrieving services:", error);
+      throw new Error("Failed to retrieve services. Please try again later.");
+    }
+  }
+
   /**
    * Creates a new service entry in the database.
    * @param data - The data for the service to be created.
