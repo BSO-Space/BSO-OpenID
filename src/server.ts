@@ -3,7 +3,6 @@ import express from "express";
 import http from "http";
 import { envConfig } from "./config/env.config";
 import { ServicesService } from "./services/service.service";
-import axios from "axios";
 import app from "./app";
 
 const server = http.createServer(app);
