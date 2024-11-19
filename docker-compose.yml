@@ -12,6 +12,7 @@ services:
     depends_on:
       - db
     command: ["npm", "run", "serve"]
+    restart: unless-stopped
 
   db:
     image: postgres:latest
@@ -24,6 +25,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:5432"
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4
@@ -35,6 +37,7 @@ services:
       - "${PGADMIN_PORT}:80"
     depends_on:
       - db
+    restart: unless-stopped
 
 volumes:
   postgres_data:
