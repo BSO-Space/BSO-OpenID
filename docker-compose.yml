@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: ${PG_DATABASE}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - open_id_postgres_data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:5432"
 
@@ -37,4 +37,4 @@ services:
       - db
 
 volumes:
-  postgres_data:
+  open_id_postgres_data:
