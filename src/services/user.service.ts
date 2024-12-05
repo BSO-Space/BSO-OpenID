@@ -217,16 +217,21 @@ class UserService {
    * @returns all users
    */
 
-  async getAllUsers(): Promise<User[]> {
-    try {
-      return await this.prisma.user.findMany();
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to retrieve users: ${error.message}`);
-      } else {
-        throw new Error("Failed to retrieve users: Unknown error");
-      }
-    }
+  async getAllUsers(
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<{ users: User[]; total: number }> {
+    const skip = (page - 1) * pageSize;
+
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return { users, total };
   }
 
   /**
@@ -323,6 +328,38 @@ class UserService {
         throw new Error("Failed to retrieve user by email: Unknown error");
       }
     }
+  }
+
+  async userHasRole(userId: string, roleName: string): Promise<boolean> {
+    const userRole = await this.prisma.userRole.findFirst({
+      where: {
+        userId,
+        role: {
+          name: roleName,
+        },
+      },
+    });
+    return !!userRole;
+  }
+
+  async userHasPermission(
+    userId: string,
+    permissionName: string
+  ): Promise<boolean> {
+    const userRoles = await this.prisma.userRole.findMany({
+      where: { userId },
+      include: {
+        role: {
+          include: { permissions: { include: { permission: true } } },
+        },
+      },
+    });
+
+    return userRoles.some((userRole) =>
+      userRole.role.permissions.some(
+        (permission) => permission.permission.name === permissionName
+      )
+    );
   }
 }
 
