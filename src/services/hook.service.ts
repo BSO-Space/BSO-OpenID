@@ -3,7 +3,7 @@ import { ServicesService } from "../services/service.service";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { WebSocket } from "ws";
-import { webSocketClients } from "../server";
+import { servicesCache, webSocketClients } from "../server";
 
 const prisma = new PrismaClient();
 
@@ -126,53 +126,54 @@ export class HookService {
       // Generate signature using payload and hookSecret
       const signature = this.generateSignature(payload, hookSecret);
 
-      // Get WebSocket client from memory using clientId
-      const clientId = service.id;
-      const client = webSocketClients.get(clientId);
+      // Get all connected clients for the given serviceId from the cache
+      const connectedClients = servicesCache.get(service.id);
 
-      // If client is found, send login notification to WebSocket client
-      if (client) {
-        // Send login notification to WebSocket client
-        if (
-          client &&
-          client.readyState === WebSocket.OPEN &&
-          service.id === clientId
-        ) {
-          // Send login notification to WebSocket client
-          client.send(JSON.stringify({ payload, signature, token }));
-          console.log(
-            `[INFO] Sent login notification to client with ${service.name} 🚀`
-          );
+      // If no clients are connected, log an error and return
+      if (!connectedClients || connectedClients.size === 0) {
+        console.log(`[INFO] No clients connected to service ${service.name}`);
+      }
 
-          // Log the WebSocket request
-          await this.logHook(service.id, "WebSocket", "success", 200, {
-            user,
-            service: serviceName,
-            ip,
-            userAgent,
-          });
-        } else {
-          // Log the error
-          console.log(
-            `[ERROR] Client with ID: ${clientId} is not connected or WebSocket is closed.`
-          );
+      if (connectedClients && connectedClients.size != 0) {
+        // Loop through all connected clients and send the login notification
+        for (const clientId of connectedClients) {
+          const client = webSocketClients.get(clientId);
 
-          await this.logHook(
-            service.id,
-            "WebSocket",
-            "failed",
-            500,
-            {
+          if (client && client.ws.readyState === WebSocket.OPEN) {
+            // Send login notification to WebSocket client
+            client.ws.send(JSON.stringify({ payload, signature, token }));
+            console.log(
+              `[INFO] Sent login notification to client with ${service.name} 🚀`
+            );
+
+            // Log the WebSocket request
+            await this.logHook(service.id, "WebSocket", "success", 200, {
               user,
-              service: serviceName,
+              service: service.name,
               ip,
               userAgent,
-            },
-            null,
-            "Client is not connected or WebSocket is closed."
-          );
+            });
+          } else {
+            // Log the error for disconnected or non-ready WebSocket clients
+            console.log(
+              `[ERROR] Client with ID: ${clientId} is not connected or WebSocket is closed.`
+            );
 
-          return false;
+            await this.logHook(
+              service.id,
+              "WebSocket",
+              "failed",
+              500,
+              {
+                user,
+                service: service.name,
+                ip,
+                userAgent,
+              },
+              null,
+              "Client is not connected or WebSocket is closed."
+            );
+          }
         }
       }
 
