@@ -6,18 +6,22 @@ import UserService from "../services/user.service";
 import { ServicesService } from "../services/service.service";
 import AuthMiddleware from "../middlewares/auth.middleware";
 import { HookService } from "../services/hook.service";
+import { CryptoService } from "../services/crypto.service";
 const router = Router();
 const authService = new AuthService();
 const servicesService = new ServicesService();
 const userService = new UserService();
 const authMiddleware = new AuthMiddleware(authService, userService);
+const crypetpService = new CryptoService();
+
 const hookService = new HookService(servicesService);
 // Create an instance of the AuthController
 const authController = new AuthController(
   authService,
   servicesService,
   userService,
-  hookService
+  hookService,
+  crypetpService
 );
 
 // Define the routes for the authentication process
@@ -61,5 +65,9 @@ router.get("/me", authMiddleware.authenticate, authController.me);
 
 // Define the failure route for authentication
 router.delete("/logout", authController.logout);
+
+router.post('/signup', authController.signup);
+
+router.post('/login', authController.login);
 
 export default router;
