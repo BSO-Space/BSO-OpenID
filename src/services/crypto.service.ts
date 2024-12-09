@@ -7,6 +7,12 @@ import { envConfig } from '../config/env.config';
 import logger from '../utils/logger.util';
 
 export class CryptoService {
+  private readonly keyDirectory: string;
+
+  constructor() {
+    this.keyDirectory = path.join(process.cwd(), 'keys');
+  }
+
   /**
    * Hash a plain-text password.
    * @param password - The plain-text password to hash.
@@ -35,7 +41,7 @@ export class CryptoService {
    * @returns The file path for the key.
    */
   private getKeyPath(service: string, type: 'Access' | 'Refresh', keyType: 'Private' | 'Public'): string {
-    return path.join(process.cwd(), `${service}${keyType}${type}.pem`);
+    return path.join(this.keyDirectory, `${service}${keyType}${type}.pem`);
   }
 
   /**
@@ -129,6 +135,11 @@ export class CryptoService {
     }
   }
 
+  /**
+   * Decode a token without verifying its signature.
+   * @param token - The token to decode.
+   * @returns The decoded payload or null if decoding fails.
+   */
   public decodeToken(token: string): any {
     try {
       return jwt.decode(token);
