@@ -2,7 +2,7 @@
  * USerService this class is used to interact with the database
  * and perform CRUD operations on the User model.
  */
-import { Account, PrismaClient, User } from '@prisma/client'
+import { Account, Prisma, PrismaClient, User } from '@prisma/client'
 
 /**
  * UserService this class is used to interact with the database
@@ -18,7 +18,7 @@ import { Account, PrismaClient, User } from '@prisma/client'
 class UserService {
   private prisma: PrismaClient
 
-  constructor () {
+  constructor() {
     this.prisma = new PrismaClient()
   }
 
@@ -27,7 +27,7 @@ class UserService {
    * @param userId the user ID
    * @returns the user and their services
    */
-  async me (userId: string) {
+  async me(userId: string) {
     try {
       return await this.prisma.user.findMany({
         where: {
@@ -78,7 +78,7 @@ class UserService {
    * @returns the user
    */
 
-  public async findOrCreateUserFromProfile (
+  public async findOrCreateUserFromProfile(
     profile: { id: string; username: string; email: string; avatar: string },
     provider: string
   ): Promise<Partial<User>> {
@@ -125,6 +125,7 @@ class UserService {
         username: newUserName,
         email,
         image: avatar,
+        userStatus: 'active',
         accounts: {
           create: {
             provider,
@@ -148,22 +149,26 @@ class UserService {
    * @returns the newly created user
    */
 
-  async createUser (data: Omit<User, 'id' | 'createdAt'>): Promise<User> {
+
+  async createUser(data: Omit<User, 'id' | 'createdAt'> & { auditLogs?: Prisma.InputJsonValue[] }): Promise<User> {
     try {
       const newUser = await this.prisma.user.create({
-        data
-      })
-      return newUser
+        data: {
+          ...data,
+          auditLogs: data.auditLogs as Prisma.InputJsonValue[],
+        },
+      });
+      return newUser;
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Failed to create user: ${error.message}`)
+        throw new Error(`Failed to create user: ${error.message}`);
       } else {
-        throw new Error('Failed to create user: Unknown error')
+        throw new Error('Failed to create user: Unknown error');
       }
     }
   }
 
-  async createUserAccount (
+  async createUserAccount(
     userId: string,
     provider: string,
     providerAccountId: string
@@ -191,7 +196,7 @@ class UserService {
    * @returns the user
    */
 
-  async getByProviderNameAndEmail (
+  async getByProviderNameAndEmail(
     providerName: string,
     email: string
   ): Promise<User | null> {
@@ -227,7 +232,7 @@ class UserService {
    * @returns the user and their accounts
    */
 
-  async getUserAndAccountByEmail (email: string): Promise<{
+  async getUserAndAccountByEmail(email: string): Promise<{
     user: User | null
     accounts: Account[] | null
   }> {
@@ -257,7 +262,7 @@ class UserService {
    * @returns all users
    */
 
-  async getAllUsers (
+  async getAllUsers(
     page: number = 1,
     pageSize: number = 10
   ): Promise<{ users: User[]; total: number }> {
@@ -279,7 +284,7 @@ class UserService {
    * @param id the user ID
    * @returns the user with the specified ID
    */
-  async getUserById (id: string): Promise<Partial<User> | null> {
+  async getUserById(id: string): Promise<Partial<User> | null> {
     try {
       return await this.prisma.user.findUnique({
         where: { id },
@@ -308,7 +313,7 @@ class UserService {
    * @returns true if the user has the service, false otherwise
    */
 
-  async userHasService (userId: string, service: string): Promise<boolean> {
+  async userHasService(userId: string, service: string): Promise<boolean> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -331,8 +336,7 @@ class UserService {
       return true
     } catch (error) {
       throw new Error(
-        `Failed to retrieve user service info: ${
-          error instanceof Error ? error.message : 'Unknown error'
+        `Failed to retrieve user service info: ${error instanceof Error ? error.message : 'Unknown error'
         }`
       )
     }
@@ -343,7 +347,7 @@ class UserService {
    * @param username the username
    * @returns the user with the specified username
    */
-  async getUserByUsername (username: string): Promise<User | null> {
+  async getUserByUsername(username: string): Promise<User | null> {
     try {
       return await this.prisma.user.findUnique({
         where: { username }
@@ -362,7 +366,7 @@ class UserService {
    * @param email  the email
    * @returns  the user with the specified email
    */
-  async getUserByEmail (email: string): Promise<User | null> {
+  async getUserByEmail(email: string): Promise<User | null> {
     try {
       return await this.prisma.user.findUnique({
         where: { email }
@@ -376,7 +380,7 @@ class UserService {
     }
   }
 
-  async userHasRole (userId: string, roleName: string): Promise<boolean> {
+  async userHasRole(userId: string, roleName: string): Promise<boolean> {
     const userRole = await this.prisma.userRole.findFirst({
       where: {
         userId,
@@ -388,7 +392,7 @@ class UserService {
     return !!userRole
   }
 
-  async userHasPermission (
+  async userHasPermission(
     userId: string,
     permissionName: string
   ): Promise<boolean> {
