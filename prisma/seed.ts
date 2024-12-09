@@ -65,7 +65,7 @@ async function main() {
   // 4. Create Service
   const service = await prisma.service.create({
     data: {
-      name: 'Attendify',
+      name: 'attendify',
       description: 'A service for managing attendance.',
       public: true,
       image: 'https://example.com/images/attendify.png',
