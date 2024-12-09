@@ -6,8 +6,9 @@ import { ServicesService } from '../services/service.service'
 import { envConfig } from '../config/env.config'
 import { JwtPayload } from 'jsonwebtoken'
 import { User } from '@prisma/client'
-import { HookService } from '../services/hook.service'
+// import { HookService } from '../services/hook.service'
 import { CryptoService } from '../services/crypto.service'
+import { generateAuditLog } from '../utils/contstant.util';
 
 declare module 'express-session' {
   interface Session {
@@ -23,20 +24,20 @@ export class AuthController {
   private authService: AuthService
   private servicesService: ServicesService
   private userService: UserService
-  private hookService: HookService
+  // private hookService: HookService
   private cryptoService: CryptoService
 
-  constructor (
+  constructor(
     authService: AuthService,
     servicesService: ServicesService,
     userService: UserService,
-    hookService: HookService,
+    // hookService: HookService,
     cryptoService: CryptoService
   ) {
     this.authService = authService
     this.servicesService = servicesService
     this.userService = userService
-    this.hookService = hookService
+    // this.hookService = hookService
     this.cryptoService = cryptoService
 
     this.discordAuth = this.discordAuth.bind(this)
@@ -54,9 +55,9 @@ export class AuthController {
   }
 
   /**
-   * Initiates the Discord authentication process
+   * Discord authentication 
    */
-  public async discordAuth (
+  public async discordAuth(
     req: Request,
     res: Response,
     next: NextFunction
@@ -99,7 +100,7 @@ export class AuthController {
   /**
    * Callback function for Discord authentication
    */
-  public async discordCallback (
+  public async discordCallback(
     req: Request,
     res: Response,
     next: NextFunction
@@ -137,14 +138,6 @@ export class AuthController {
         )
       }
 
-      const user = req.user as any
-      await this.authService.logAudit(
-        user.id,
-        'LOGIN',
-        req.ip || '',
-        req.get('User-Agent') || ''
-      )
-
       res.redirect(`/auth/success?service=${service}&redirect=${redirect}`)
     } catch (error) {
       next(error)
@@ -154,7 +147,7 @@ export class AuthController {
   /**
    * Initiates the GitHub authentication process
    */
-  public async githubAuth (
+  public async githubAuth(
     req: Request,
     res: Response,
     next: NextFunction
@@ -197,7 +190,7 @@ export class AuthController {
   /**
    * Callback function for GitHub authentication
    */
-  public async githubCallback (
+  public async githubCallback(
     req: Request,
     res: Response,
     next: NextFunction
@@ -235,21 +228,13 @@ export class AuthController {
         )
       }
 
-      const user = req.user as any
-      await this.authService.logAudit(
-        user.id,
-        'LOGIN',
-        req.ip || '',
-        req.get('User-Agent') || ''
-      )
-
       res.redirect(`/auth/success?service=${service}&redirect=${redirect}`)
     } catch (error) {
       next(error)
     }
   }
 
-  public async googleAuth (
+  public async googleAuth(
     req: Request,
     res: Response,
     next: NextFunction
@@ -289,7 +274,7 @@ export class AuthController {
     })
   }
 
-  public async googleCallback (
+  public async googleCallback(
     req: Request,
     res: Response,
     next: NextFunction
@@ -323,21 +308,13 @@ export class AuthController {
       await this.servicesService.createUserService(userId, existingServices.id)
     }
 
-    const user = req.user as any
-    await this.authService.logAudit(
-      user.id,
-      'LOGIN',
-      req.ip || '',
-      req.get('User-Agent') || ''
-    )
-
     res.redirect(`/auth/success?service=${service}&redirect=${redirect}`)
   }
 
   /**
    * Successful authentication response
    */
-  public async authSuccess (req: Request, res: Response): Promise<any> {
+  public async authSuccess(req: Request, res: Response): Promise<any> {
     try {
       const service = req.query.service as string
       const redirect = req.query.redirect as string
@@ -359,8 +336,8 @@ export class AuthController {
         })
       }
 
-      const accessToken = this.authService.generateAccessToken(user, service)
-      const refreshToken = this.authService.generateRefreshToken(user, service)
+      const accessToken = this.cryptoService.generateAccessToken(user, service)
+      const refreshToken = this.cryptoService.generateRefreshToken(user, service)
 
       res.cookie('accessToken', accessToken, {
         httpOnly: true,
@@ -382,20 +359,13 @@ export class AuthController {
             : 'localhost'
       })
 
-      await this.authService.logAudit(
-        user.id,
-        'ACCESS_SERVICE',
-        req.ip || '',
-        req.get('User-Agent') || ''
-      )
-
       return res.redirect(redirect || '/')
     } catch (error) {
       res.status(500).json({ error: error })
     }
   }
 
-  public async logout (req: Request, res: Response): Promise<any> {
+  public async logout(req: Request, res: Response): Promise<any> {
     res.clearCookie('accessToken')
     res.clearCookie('refreshToken')
     req.session.destroy(err => {
@@ -412,7 +382,7 @@ export class AuthController {
     })
   }
 
-  public async refresh (req: Request, res: Response): Promise<any> {
+  public async refresh(req: Request, res: Response): Promise<any> {
     try {
       // Get the refresh token from the request
       const refreshToken =
@@ -447,7 +417,7 @@ export class AuthController {
 
       // Verify the refresh token
       const jwtPayload: JwtPayload | null =
-        this.authService.verifyAccessToken(refreshToken)
+        this.cryptoService.verifyAccessToken(refreshToken, service)
 
       // Check if the refresh token is valid
       if (!jwtPayload) {
@@ -486,7 +456,7 @@ export class AuthController {
       }
 
       // Generate a new access token
-      const accessToken = this.authService.generateAccessToken(user, service)
+      const accessToken = this.cryptoService.generateAccessToken(user, service)
 
       // Generate a new refresh token
       res.cookie('accessToken', accessToken, {
@@ -523,7 +493,7 @@ export class AuthController {
     }
   }
 
-  public async me (req: Request, res: Response): Promise<any> {
+  public async me(req: Request, res: Response): Promise<any> {
     try {
       const user = req.user as User
 
@@ -549,7 +519,7 @@ export class AuthController {
     }
   }
 
-  public async signup (req: Request, res: Response): Promise<any> {
+  public async signup(req: Request, res: Response): Promise<any> {
     try {
       const { email, password } = req.body
       const service = req.query.service as string
@@ -608,12 +578,12 @@ export class AuthController {
         }
 
         // Generate tokens
-        const accessToken = this.authService.generateAccessToken(
+        const accessToken = this.cryptoService.generateAccessToken(
           existingUserByEmail,
           service
         )
 
-        const refreshToken = this.authService.generateRefreshToken(
+        const refreshToken = this.cryptoService.generateRefreshToken(
           existingUserByEmail,
           service
         )
@@ -666,24 +636,20 @@ export class AuthController {
         password: hashedPassword,
         username: null,
         firstName: null,
+        userStatus: 'ACTIVE',
         lastName: null,
         image: null,
         updatedAt: new Date(),
-        deletedAt: null
-      })
+        deletedAt: null,
+        auditLogs: [
+          generateAuditLog(null, 'REGISTER', 'User', { email, action: 'User signed up' }),
+        ],
+      });
 
       await this.userService.createUserAccount(
         newUser.id,
         'BSO-Space',
         newUser.id
-      )
-
-      // Log audit event for user signup
-      await this.authService.logAudit(
-        newUser.id,
-        'SIGNUP',
-        req.ip || '',
-        req.get('User-Agent') || ''
       )
 
       await this.servicesService.createUserService(
@@ -692,8 +658,8 @@ export class AuthController {
       )
 
       // Generate tokens
-      const accessToken = this.authService.generateAccessToken(newUser, service)
-      const refreshToken = this.authService.generateRefreshToken(
+      const accessToken = this.cryptoService.generateAccessToken(newUser, service)
+      const refreshToken = this.cryptoService.generateRefreshToken(
         newUser,
         service
       )
@@ -745,7 +711,7 @@ export class AuthController {
     }
   }
 
-  public async login (req: Request, res: Response): Promise<any> {
+  public async login(req: Request, res: Response): Promise<any> {
     try {
       const { email, password } = req.body
       const service = req.query.service as string
@@ -823,8 +789,8 @@ export class AuthController {
       }
 
       // Generate access and refresh tokens
-      const accessToken = this.authService.generateAccessToken(user, service)
-      const refreshToken = this.authService.generateRefreshToken(user, service)
+      const accessToken = this.cryptoService.generateAccessToken(user, service)
+      const refreshToken = this.cryptoService.generateRefreshToken(user, service)
 
       // Set tokens as cookies
       res.cookie('accessToken', accessToken, {
@@ -846,14 +812,6 @@ export class AuthController {
             ? `${envConfig.DOMAIN}`
             : 'localhost'
       })
-
-      // Log audit event
-      await this.authService.logAudit(
-        user.id,
-        'LOGIN',
-        req.ip || '',
-        req.get('User-Agent') || ''
-      )
 
       // Return success response
       return res.json({
