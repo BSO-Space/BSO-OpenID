@@ -636,7 +636,7 @@ export class AuthController {
         password: hashedPassword,
         username: null,
         firstName: null,
-        userStatus: 'ACTIVE',
+        userStatus: 'active',
         lastName: null,
         image: null,
         updatedAt: new Date(),
