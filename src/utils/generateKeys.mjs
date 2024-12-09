@@ -1,22 +1,20 @@
 import { generateKeyPairSync } from "crypto";
-import { writeFileSync } from "fs";
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { join } from "path";
 
 /**
- * Create RSA key pairs for Access Token and Refresh Token
- * @returns {void}
- */
-/**
- * Generates RSA key pairs for access and refresh tokens and writes them to PEM files.
- *
- * This function generates two sets of RSA key pairs:
- * 1. Access Token keys: The public key is saved to `publicAccess.pem` and the private key is saved to `privateAccess.pem`.
- * 2. Refresh Token keys: The public key is saved to `publicRefresh.pem` and the private key is saved to `privateRefresh.pem`.
- *
- * The keys are generated with a modulus length of 2048 bits and are encoded in PEM format.
- *
- * @function generateKeys
+ * Generates RSA key pairs for access and refresh tokens and writes them to PEM files
+ * in the /keys directory.
  */
 function generateKeys() {
+  const keyDirectory = join(process.cwd(), "keys");
+
+  // Ensure the /keys directory exists
+  if (!existsSync(keyDirectory)) {
+    mkdirSync(keyDirectory, { recursive: true });
+  }
+
+  // Generate Access Token keys
   const { publicKey: publicAccessKey, privateKey: privateAccessKey } =
     generateKeyPairSync("rsa", {
       modulusLength: 2048,
@@ -30,8 +28,8 @@ function generateKeys() {
       },
     });
 
-  writeFileSync("privateAccess.pem", privateAccessKey);
-  writeFileSync("publicAccess.pem", publicAccessKey);
+  writeFileSync(join(keyDirectory, "OpenIDPrivateAccess.pem"), privateAccessKey);
+  writeFileSync(join(keyDirectory, "OpenIDPublicAccess.pem"), publicAccessKey);
 
   // Generate Refresh Token keys
   const { publicKey: publicRefreshKey, privateKey: privateRefreshKey } =
@@ -47,8 +45,10 @@ function generateKeys() {
       },
     });
 
-  writeFileSync("privateRefresh.pem", privateRefreshKey);
-  writeFileSync("publicRefresh.pem", publicRefreshKey);
+  writeFileSync(join(keyDirectory, "OpenIDPrivateRefresh.pem"), privateRefreshKey);
+  writeFileSync(join(keyDirectory, "OpenIDPublicRefresh.pem"), publicRefreshKey);
+
+  console.log(`Keys generated and saved in the /keys directory`);
 }
 
 generateKeys();
