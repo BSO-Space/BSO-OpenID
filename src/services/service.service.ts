@@ -41,20 +41,6 @@ export class ServicesService {
     }
   }
 
-  async findByToken(token: string): Promise<Service | null> {
-    try {
-      return await this.prisma.service.findFirst({
-        where: {
-          hookSecret: token,
-          deletedAt: null,
-        },
-      });
-    } catch (error) {
-      console.error("Error retrieving services:", error);
-      throw new Error("Failed to retrieve services. Please try again later.");
-    }
-  }
-
   /**
    * Creates a new service entry in the database.
    * @param data - The data for the service to be created.
@@ -80,6 +66,21 @@ export class ServicesService {
    */
   async createUserService(userId: string, serviceId: string): Promise<void> {
     try {
+      // Check if the record already exists
+      const existingUserService = await this.prisma.userService.findUnique({
+        where: {
+          userId_serviceId: { // Adjust this to match your @@unique constraint
+            userId,
+            serviceId,
+          },
+        },
+      });
+
+      if (existingUserService) {
+        return; 
+      }
+
+      // Create new UserService record
       await this.prisma.userService.create({
         data: {
           userId,
