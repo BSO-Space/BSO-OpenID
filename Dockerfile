@@ -29,11 +29,7 @@ FROM node:22 AS production
 WORKDIR /app
 
 # Copy only the necessary files from the build stage
-COPY --from=build /app/dist /app/dist
-COPY --from=build /app/node_modules /app/node_modules
-COPY --from=build /app/package.json /app/package.json
-COPY --from=build /app/keys /app/keys
-COPY --from=build /app/public /app/public
+COPY . .
 
 # Run the application
 CMD ["node", "dist/src/server.js"]
