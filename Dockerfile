@@ -19,6 +19,9 @@ RUN npx prisma generate
 # Build the TypeScript code
 RUN npm run build
 
+# Generate a key for the JWT secret
+RUN npm run generate:key
+
 # Stage 2: Production image
 FROM node:22 AS production
 
@@ -29,7 +32,7 @@ WORKDIR /app
 COPY --from=build /app/dist /app/dist
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/package.json /app/package.json
-COPY --from=build /app/*.pem /app/
+COPY --from=build /app/keys /app/keys
 COPY --from=build /app/public /app/public
 
 # Run the application
