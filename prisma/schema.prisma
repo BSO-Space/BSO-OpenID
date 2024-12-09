@@ -17,6 +17,8 @@ model User {
   lastName      String?
   password      String?
   image         String?
+  userStatus    String
+  uerPermissions UserPermission[]
   email         String         @unique
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now()) @updatedAt
@@ -24,8 +26,7 @@ model User {
   accounts      Account[]
   userRoles     UserRole[]
   userServices  UserService[]
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
+  auditLogs     Json[]
 }
 
 model Account {
@@ -39,6 +40,7 @@ model Account {
   updatedAt         DateTime  @default(now()) @updatedAt
   deletedAt         DateTime?
   user              User      @relation(fields: [userId], references: [id])
+  auditLogs     Json[]
 }
 
 model Role {
@@ -50,6 +52,7 @@ model Role {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @default(now()) @updatedAt
   deletedAt   DateTime?
+  auditLogs     Json[]
 }
 
 model Permission {
@@ -58,9 +61,11 @@ model Permission {
   description       String?
   rolePermissions   RolePermission[]
   ServicePermission ServicePermission[]
+  userPermissions   UserPermission[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   deletedAt         DateTime?
+  auditLogs     Json[]
 }
 
 model RolePermission {
@@ -73,8 +78,22 @@ model RolePermission {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
-
+  auditLogs     Json[]
   @@unique([roleId, permissionId])
+}
+
+model UserPermission {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  user         User       @relation(fields: [userId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  deletedAt DateTime?
+  auditLogs     Json[]
+  @@unique([userId, permissionId])
 }
 
 model UserRole {
@@ -87,7 +106,7 @@ model UserRole {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
-
+  auditLogs     Json[]
   @@unique([userId, roleId])
 }
 
@@ -97,29 +116,16 @@ model Service {
   description        String?
   public             Boolean             @default(false)
   image              String?
-  hookSecret         String              @default(cuid())
   microServicesUrl   String[]            @default([])
   apiKeys            ServiceApiKey[]
+  publicKeys         String
   servicePermissions ServicePermission[]
   userServices       UserService[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
-  HookLog   HookLog[]
-}
-
-model HookLog {
-  id           String   @id @default(uuid())
-  serviceId    String
-  url          String
-  status       String
-  statusCode   Int
-  requestBody  Json
-  responseBody Json?
-  errorMessage String?
-  createdAt    DateTime @default(now())
-  service      Service  @relation(fields: [serviceId], references: [id])
+  auditLogs     Json[]
 }
 
 model ServiceApiKey {
@@ -132,6 +138,7 @@ model ServiceApiKey {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
+  auditLogs     Json[]
 }
 
 model ServicePermission {
@@ -143,7 +150,7 @@ model ServicePermission {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @default(now()) @updatedAt
   deletedAt    DateTime?
-
+  auditLogs     Json[]
   @@unique([serviceId, permissionId])
 }
 
@@ -157,30 +164,6 @@ model UserService {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
   deletedAt DateTime?
-
+  auditLogs     Json[]
   @@unique([userId, serviceId])
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  issuedAt  DateTime @default(now())
-  expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  deletedAt DateTime?
-}
-
-model AuditLog {
-  id        String    @id @default(uuid())
-  userId    String
-  action    String
-  timestamp DateTime  @default(now())
-  ipAddress String?
-  userAgent String?
-  deletedAt DateTime?
-  user      User      @relation(fields: [userId], references: [id])
 }
