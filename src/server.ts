@@ -30,55 +30,55 @@ wss.on("connection", (ws) => {
   const randomName = faker.person.firstName();
   const clientUUID = randomUUID();
 
-  // Handle message from client to register ID and token
-  ws.on("message", async (message: string) => {
-    try {
-      const data = JSON.parse(message);
+  // // Handle message from client to register ID and token
+  // ws.on("message", async (message: string) => {
+  //   try {
+  //     const data = JSON.parse(message);
 
-      // Asynchronous call to find service by token
-      const existingService = await servicesService.findByToken(data.token);
+  //     // Asynchronous call to find service by token
+  //     const existingService = await servicesService.findByToken(data.token);
 
-      if (existingService) {
-        client = {
-          serviceId: existingService.id,
-          service: existingService.name,
-          uuid: clientUUID,
-          name: randomName,
-        };
+  //     if (existingService) {
+  //       client = {
+  //         serviceId: existingService.id,
+  //         service: existingService.name,
+  //         uuid: clientUUID,
+  //         name: randomName,
+  //       };
 
-        // เก็บ WebSocket client ใน memory โดยใช้ clientUUID เป็น key
-        webSocketClients.set(clientUUID, {
-          serviceId: client.serviceId,
-          serviceName: client.service,
-          ws,
-        });
+  //       // เก็บ WebSocket client ใน memory โดยใช้ clientUUID เป็น key
+  //       webSocketClients.set(clientUUID, {
+  //         serviceId: client.serviceId,
+  //         serviceName: client.service,
+  //         ws,
+  //       });
 
-        // เก็บ UUID ของ client ใน servicesCache โดยเชื่อมโยงกับ serviceId
-        if (!servicesCache.has(client.serviceId)) {
-          servicesCache.set(client.serviceId, new Set());
-        }
-        servicesCache.get(client.serviceId)?.add(clientUUID);
+  //       // เก็บ UUID ของ client ใน servicesCache โดยเชื่อมโยงกับ serviceId
+  //       if (!servicesCache.has(client.serviceId)) {
+  //         servicesCache.set(client.serviceId, new Set());
+  //       }
+  //       servicesCache.get(client.serviceId)?.add(clientUUID);
 
-        console.log(
-          `[INFO] ${existingService.name} service connected with ${client.name}. 🌈🎉`
-        );
+  //       console.log(
+  //         `[INFO] ${existingService.name} service connected with ${client.name}. 🌈🎉`
+  //       );
 
-        // ส่งข้อความยืนยันการเชื่อมต่อ
-        ws.send(`Hello World, ${existingService.name}. 🎉👋`);
-      } else {
-        const responseMessage = {
-          message: "Service not found with the provided token",
-        };
-        ws.send(JSON.stringify(responseMessage));
-      }
-    } catch (error) {
-      console.error("Error parsing client message", error);
-      const responseMessage = {
-        message: "Error processing your request",
-      };
-      ws.send(JSON.stringify(responseMessage));
-    }
-  });
+  //       // ส่งข้อความยืนยันการเชื่อมต่อ
+  //       ws.send(`Hello World, ${existingService.name}. 🎉👋`);
+  //     } else {
+  //       const responseMessage = {
+  //         message: "Service not found with the provided token",
+  //       };
+  //       ws.send(JSON.stringify(responseMessage));
+  //     }
+  //   } catch (error) {
+  //     console.error("Error parsing client message", error);
+  //     const responseMessage = {
+  //       message: "Error processing your request",
+  //     };
+  //     ws.send(JSON.stringify(responseMessage));
+  //   }
+  // });
 
   // Handle WebSocket disconnection
   ws.on("close", async () => {
