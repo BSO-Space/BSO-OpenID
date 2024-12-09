@@ -26,20 +26,24 @@ export class ServicesService {
 
   async findByNames(name: string): Promise<Service | null> {
     try {
-      return await this.prisma.service.findFirst({
+      const service = await this.prisma.service.findFirst({
         where: {
-          name: {
-            contains: name,
-            mode: "insensitive",
-          },
+          name: name,
           deletedAt: null,
         },
       });
+  
+      if (!service) {
+        console.log(`Service with name "${name}" not found.`);
+      }
+  
+      return service;
     } catch (error) {
-      console.error("Error retrieving services:", error);
-      throw new Error("Failed to retrieve services. Please try again later.");
+      console.error("Error retrieving service:", error);
+      throw new Error("Failed to retrieve service. Please try again later.");
     }
   }
+  
 
   /**
    * Creates a new service entry in the database.
