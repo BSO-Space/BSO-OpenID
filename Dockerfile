@@ -4,23 +4,24 @@ FROM node:22 AS build
 # Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json to install dependencies
+# Copy only necessary files for dependency installation
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy all application files, including .pem files and TypeScript files
+# Copy the rest of the application files (e.g., source, Prisma schema)
 COPY . .
 
 # Generate Prisma client for the correct binary targets
 RUN npx prisma generate
 
-# Build the TypeScript code
+# Generate keys for JWT or other secure operations
+RUN npm run generate:key
+
+# Build the application
 RUN npm run build
 
-# Generate a key for the JWT secret
-RUN npm run generate:key
 
 # Stage 2: Production image
 FROM node:22 AS production
@@ -28,8 +29,12 @@ FROM node:22 AS production
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary files from the build stage
-COPY . .
+# Copy only the built application and runtime dependencies
+COPY --from=build /app/dist /app/dist
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/prisma /app/prisma
+COPY --from=build /app/package.json /app/package.json
+COPY --from=build /app/keys /app/keys
 
 # Run the application
 CMD ["node", "dist/src/server.js"]
