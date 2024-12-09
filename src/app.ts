@@ -12,15 +12,15 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { keyRoutes } from "./routes/key.routes";
 
 const app = express();
 
 const corsOptions = {
-  origin: `${
-    envConfig.NODE_ENV === "production"
+  origin: `${envConfig.NODE_ENV === "production"
       ? envConfig.FRONTEND_URL
       : "http://localhost:3000"
-  } `,
+    } `,
   credentials: true,
 };
 
@@ -70,7 +70,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(auditMiddleware.logAccess.bind(auditMiddleware));
-app.use("/auth", authRoutes);
+
+app.use("/api/v1/auth", authRoutes);
+app.use('/api/v1', keyRoutes);
 
 app.get("*", (req, res) => {
   res.status(404).json({
