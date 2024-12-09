@@ -13,16 +13,6 @@ class AuditMiddleware {
       const user = req.user as any;
       const ipAddress = req.ip || "";
       const userAgent = req.get("User-Agent") || "";
-      if (typeof user.id === "string") {
-        await this.authService.logAudit(
-          user.id,
-          "ACCESS_SERVICE",
-          ipAddress,
-          userAgent
-        );
-      } else {
-        console.error("User ID is not a string:", user.id);
-      }
     }
     next();
   }
