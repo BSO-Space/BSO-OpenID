@@ -15,6 +15,9 @@ interface EnvConfig {
   PG_USER: string;
   PG_PASSWORD: string;
   PG_DATABASE: string;
+  REDIS_HOST: string;
+  REDIS_PORT: string;
+  REDIS_PASSWORD: string;
   DISCORD_CLIENT_ID: string;
   DISCORD_CLIENT_SECRET: string;
   DISCORD_CALLBACK_URL: string;
@@ -41,6 +44,9 @@ const requiredConfig: (keyof EnvConfig)[] = [
   "PG_USER",
   "PG_PASSWORD",
   "PG_DATABASE",
+  "REDIS_HOST",
+  "REDIS_PASSWORD",
+  "REDIS_PORT",
   "DISCORD_CLIENT_ID",
   "DISCORD_CLIENT_SECRET",
   "DISCORD_CALLBACK_URL",
@@ -67,6 +73,9 @@ export const envConfig: EnvConfig = {
   PG_USER: process.env.PG_USER || "postgres",
   PG_PASSWORD: process.env.PG_PASSWORD || "password",
   PG_DATABASE: process.env.PG_DATABASE || "database",
+  REDIS_HOST: process.env.REDIS_HOST || "localhost",
+  REDIS_PORT: process.env.REDIS_PORT || "6379",
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || "",
   DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID || "",
   DISCORD_CLIENT_SECRET: process.env.DISCORD_CLIENT_SECRET || "",
   DISCORD_CALLBACK_URL: process.env.DISCORD_CALLBACK_URL || "",
