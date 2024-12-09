@@ -3,104 +3,96 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+    console.log('Seeding permission and role database...');
 
-  // 1. Create Permissions
-  const permissions = [
-    { name: 'user:read', description: 'Allows reading user information' },
-    { name: 'user:write', description: 'Allows writing user information' },
-    { name: 'service:read', description: 'Allows reading service information' },
-    { name: 'service:write', description: 'Allows writing service information' },
-  ];
+    // Define permissions based on all entities
+    const permissions = [
+        // User Permissions
+        { name: 'read:user', description: 'Allows reading user information' },
+        { name: 'write:user', description: 'Allows writing user information' },
+        { name: 'delete:user', description: 'Allows deleting user information' },
+        { name: 'manage:user', description: 'Allows managing user-related actions' },
 
-  await prisma.permission.createMany({
-    data: permissions,
-    skipDuplicates: true,
-  });
-  console.log(`Created permissions: ${permissions.map((p) => p.name).join(', ')}`);
+        // Role Permissions
+        { name: 'read:role', description: 'Allows reading role information' },
+        { name: 'write:role', description: 'Allows writing role information' },
+        { name: 'delete:role', description: 'Allows deleting role information' },
+        { name: 'manage:role', description: 'Allows managing roles and permissions' },
 
-  // 2. Create Roles
-  const role = await prisma.role.create({
-    data: {
-      name: 'Admin',
-      description: 'Administrator with all permissions',
-    },
-  });
-  console.log(`Created role: ${role.name}`);
+        // Permission Permissions
+        { name: 'read:permission', description: 'Allows reading permission information' },
+        { name: 'write:permission', description: 'Allows writing permission information' },
+        { name: 'delete:permission', description: 'Allows deleting permission information' },
+        { name: 'manage:permission', description: 'Allows managing permissions' },
 
-  // Assign Permissions to Role
-  const permissionRecords = await prisma.permission.findMany();
-  const rolePermissions = permissionRecords.map((permission) => ({
-    roleId: role.id,
-    permissionId: permission.id,
-  }));
-  await prisma.rolePermission.createMany({
-    data: rolePermissions,
-    skipDuplicates: true,
-  });
-  console.log(`Assigned permissions to role: ${role.name}`);
+        // Service Permissions
+        { name: 'read:service', description: 'Allows reading service information' },
+        { name: 'write:service', description: 'Allows writing service information' },
+        { name: 'delete:service', description: 'Allows deleting service information' },
+        { name: 'manage:service', description: 'Allows managing services and APIs' },
 
-  // 3. Create User
-  const user = await prisma.user.create({
-    data: {
-      username: 'admin',
-      email: 'admin@example.com',
-      firstName: 'Admin',
-      lastName: 'User',
-      password: 'password123', // Replace with a hashed password in production
-      userStatus: 'active',
-    },
-  });
-  console.log(`Created user: ${user.username}`);
+        // Key Permissions
+        { name: 'read:keys', description: 'Allows reading key information' },
+        { name: 'write:keys', description: 'Allows writing key information' },
+        { name: 'delete:keys', description: 'Allows deleting key information' },
+        { name: 'manage:keys', description: 'Allows managing keys' },
 
-  // Assign Role to User
-  await prisma.userRole.create({
-    data: {
-      userId: user.id,
-      roleId: role.id,
-    },
-  });
-  console.log(`Assigned role to user: ${user.username}`);
+        // key Permissions
+        { name: 'manage:keys', description: 'Allows manage key information' },
+        { name: 'manage:keys:read', description: 'Allows reading key information' },
+        { name: 'manage:keys:write', description: 'Allows writing key information' },
 
-  // 4. Create Service
-  const service = await prisma.service.create({
-    data: {
-      name: 'attendify',
-      description: 'A service for managing attendance.',
-      public: true,
-      image: 'https://example.com/images/attendify.png',
-      microServicesUrl: ['https://attendify.example.com'],
-      publicKeys: "q", // Add appropriate public keys here
-    },
-  });
-  console.log(`Created service: ${service.name}`);
+        // Logs Permissions
+        { name: 'read:logs', description: 'Allows reading audit logs' },
+        { name: 'delete:logs', description: 'Allows deleting audit logs' },
+    ];
 
-  // Assign Permissions to Service
-  const servicePermissions = permissionRecords.map((permission) => ({
-    serviceId: service.id,
-    permissionId: permission.id,
-  }));
-  await prisma.servicePermission.createMany({
-    data: servicePermissions,
-    skipDuplicates: true,
-  });
-  console.log(`Assigned permissions to service: ${service.name}`);
+    // Create permissions
+    for (const permission of permissions) {
+        await prisma.permission.upsert({
+            where: { name: permission.name },
+            update: {},
+            create: permission,
+        });
+    }
+    console.log('Permissions seeded successfully.');
 
-  // 5. Assign Service to User
-  await prisma.userService.create({
-    data: {
-      userId: user.id,
-      serviceId: service.id,
-    },
-  });
-  console.log(`Assigned service to user: ${user.username}`);
+    // Define BSO-Admin role
+    const adminRole = await prisma.role.upsert({
+        where: { name: 'BSO-Admin' },
+        update: {},
+        create: {
+            name: 'BSO-Admin',
+            description: 'Administrator role with full permissions',
+        },
+    });
+    console.log(`Role seeded: ${adminRole.name}`);
+
+    // Assign all permissions to BSO-Admin role
+    const allPermissions = await prisma.permission.findMany();
+    for (const permission of allPermissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: adminRole.id,
+                    permissionId: permission.id,
+                },
+            },
+            update: {},
+            create: {
+                roleId: adminRole.id,
+                permissionId: permission.id,
+            },
+        });
+    }
+    console.log('All permissions assigned to BSO-Admin role.');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
