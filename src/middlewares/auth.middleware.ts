@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
-import AuthService from '../services/auth.service'
 import UserService from '../services/user.service'
 import { JwtPayload } from 'jsonwebtoken'
+import { CryptoService } from '../services/crypto.service'
 
 declare global {
   namespace Express {
@@ -12,12 +12,12 @@ declare global {
 }
 
 class AuthMiddleware {
-  private authService: AuthService
   private userService: UserService
+  private cryptoService: CryptoService
 
-  constructor (authService: AuthService, userService: UserService) {
-    this.authService = authService
+  constructor ( userService: UserService,cryptoService: CryptoService) {
     this.userService = userService
+    this.cryptoService = cryptoService
   }
 
   public authenticate = async (
@@ -40,10 +40,12 @@ class AuthMiddleware {
         })
       }
 
+
+      const decode = this.cryptoService.decodeToken(token)
       // Verify the access token
 
-      const jwtPayload: JwtPayload | null =
-        this.authService.verifyAccessToken(token)
+      const jwtPayload: JwtPayload | any =
+        this.cryptoService.verifyAccessToken(token, decode?.service)
 
       if (!jwtPayload) {
         return res.status(401).json({
@@ -90,10 +92,18 @@ class AuthMiddleware {
           error: 'No refresh token provided'
         })
       }
+      const decode = this.cryptoService.decodeToken(refreshToken)
 
-      const user = this.authService.verifyRefreshToken(refreshToken)
+      // Verify the access token
+
+      const user = this.cryptoService.verifyRefreshToken(refreshToken,decode?.service)
+
       if (!user) {
-        return res.status(401).json({ message: 'Invalid refresh token' })
+        return res.status(401).json({
+          success: false,
+          message: 'Authorization failed!',
+          error: 'Invalid token'
+        })
       }
 
       req.user = user
