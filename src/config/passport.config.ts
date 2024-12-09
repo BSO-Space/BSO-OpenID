@@ -132,9 +132,7 @@ class PassportConfig {
               avatar: profile.photos[0].value,
               email,
             };
-
-            console.log("Google Profile:", profile);
-
+            
             const user = await this.userService.findOrCreateUserFromProfile(
               userProfile,
               "google"
